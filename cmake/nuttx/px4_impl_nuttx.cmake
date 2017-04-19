@@ -225,15 +225,21 @@ function(px4_nuttx_add_export)
 	add_custom_target(__nuttx_copy_${CONFIG}
 		DEPENDS nuttx_copy_${CONFIG}.stamp __nuttx_patch_${CONFIG})
 
+	if(CMAKE_HOST_WIN32)
+		set(null_dev NUL)
+	else()
+		set(null_dev /dev/null)
+	endif()
+
 	# export
 	file(GLOB_RECURSE config_files ${CMAKE_SOURCE_DIR}/nuttx-configs/${CONFIG}/*)
 	add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/${CONFIG}.export
 		COMMAND ${ECHO} Configuring NuttX for ${CONFIG}
 		COMMAND ${MAKE} --no-print-directory -C${nuttx_src}/nuttx -r --quiet distclean
 		COMMAND ${CP} -r ${CMAKE_SOURCE_DIR}/nuttx-configs/${CONFIG} ${nuttx_src}/nuttx/configs
-		COMMAND cd ${nuttx_src}/nuttx/tools && ./configure.sh ${CONFIG}/nsh
+		COMMAND cd ${nuttx_src}/nuttx/tools && ${SH} ./configure.sh ${CONFIG}/nsh
 		COMMAND ${ECHO} Exporting NuttX for ${CONFIG}
-		COMMAND ${MAKE} --no-print-directory --quiet -C ${nuttx_src}/nuttx -j${THREADS} -r CONFIG_ARCH_BOARD=${CONFIG} export > /dev/null
+		COMMAND ${MAKE} --no-print-directory --quiet -C ${nuttx_src}/nuttx -j${THREADS} -r CONFIG_ARCH_BOARD=${CONFIG} export > ${null_dev}
 		COMMAND ${CP} -r ${nuttx_src}/nuttx/nuttx-export.zip ${CMAKE_BINARY_DIR}/${CONFIG}.export
 		DEPENDS ${config_files} ${DEPENDS} __nuttx_copy_${CONFIG})
 
@@ -453,65 +459,21 @@ function(px4_os_add_flags)
 	set(added_exe_linker_flags) # none currently
 
 	set(cpu_flags)
-	if (${BOARD} STREQUAL "px4fmu-v1")
-		set(cpu_flags
-			-mcpu=cortex-m4
-			-mthumb
-			-march=armv7e-m
-			-mfpu=fpv4-sp-d16
-			-mfloat-abi=hard
-			)
-	elseif (${BOARD} STREQUAL "px4fmu-v2")
-		set(cpu_flags
-			-mcpu=cortex-m4
-			-mthumb
-			-march=armv7e-m
-			-mfpu=fpv4-sp-d16
-			-mfloat-abi=hard
-			)
-	elseif (${BOARD} STREQUAL "px4fmu-v4")
-		set(cpu_flags
-			-mcpu=cortex-m4
-			-mthumb
-			-march=armv7e-m
-			-mfpu=fpv4-sp-d16
-			-mfloat-abi=hard
-			)
-	elseif (${BOARD} STREQUAL "px4-stm32f4discovery")
-		set(cpu_flags
-			-mcpu=cortex-m4
-			-mthumb
-			-march=armv7e-m
-			-mfpu=fpv4-sp-d16
-			-mfloat-abi=hard
-			)
-	elseif (${BOARD} STREQUAL "aerocore")
-		set(cpu_flags
-			-mcpu=cortex-m4
-			-mthumb
-			-march=armv7e-m
-			-mfpu=fpv4-sp-d16
-			-mfloat-abi=hard
-			)
-	elseif (${BOARD} STREQUAL "mindpx-v2")
-			set(cpu_flags
-			-mcpu=cortex-m4
-			-mthumb
-			-march=armv7e-m
-			-mfpu=fpv4-sp-d16
-			-mfloat-abi=hard
-			)
-	elseif (${BOARD} STREQUAL "px4io-v1")
+	# Handle non-F4 boards specifically here
+	if (${BOARD} STREQUAL "px4io-v1" OR
+	    ${BOARD} STREQUAL "px4io-v2")
 		set(cpu_flags
 			-mcpu=cortex-m3
 			-mthumb
 			-march=armv7-m
 			)
-	elseif (${BOARD} STREQUAL "px4io-v2")
+	else ()
 		set(cpu_flags
-			-mcpu=cortex-m3
+			-mcpu=cortex-m4
 			-mthumb
-			-march=armv7-m
+			-march=armv7e-m
+			-mfpu=fpv4-sp-d16
+			-mfloat-abi=hard
 			)
 	endif()
 	list(APPEND c_flags ${cpu_flags})

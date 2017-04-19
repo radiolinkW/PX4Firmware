@@ -86,7 +86,6 @@ static volatile uint8_t msg_next_out, msg_next_in;
 static char msg[NUM_MSG][40];
 
 static void heartbeat_blink(void);
-static void ring_blink(void);
 
 /*
  * add a debug message to be printed on the console
@@ -133,65 +132,6 @@ heartbeat_blink(void)
 	LED_BLUE(heartbeat = !heartbeat);
 }
 
-static void
-ring_blink(void)
-{
-#ifdef GPIO_LED4
-
-	if (/* IO armed */ (r_status_flags & PX4IO_P_STATUS_FLAGS_SAFETY_OFF)
-			   /* and FMU is armed */ && (r_setup_arming & PX4IO_P_SETUP_ARMING_FMU_ARMED)) {
-		LED_RING(1);
-		return;
-	}
-
-	// XXX this led code does have
-	// intentionally a few magic numbers.
-	const unsigned max_brightness = 118;
-
-	static unsigned counter = 0;
-	static unsigned brightness = max_brightness;
-	static unsigned brightness_counter = 0;
-	static unsigned on_counter = 0;
-
-	if (brightness_counter < max_brightness) {
-
-		bool on = ((on_counter * 100) / brightness_counter + 1) <= ((brightness * 100) / max_brightness + 1);
-
-		// XXX once led is PWM driven,
-		// remove the ! in the line below
-		// to return to the proper breathe
-		// animation / pattern (currently inverted)
-		LED_RING(!on);
-		brightness_counter++;
-
-		if (on) {
-			on_counter++;
-		}
-
-	} else {
-
-		if (counter >= 62) {
-			counter = 0;
-		}
-
-		int n;
-
-		if (counter < 32) {
-			n = counter;
-
-		} else {
-			n = 62 - counter;
-		}
-
-		brightness = (n * n) / 8;
-		brightness_counter = 0;
-		on_counter = 0;
-		counter++;
-	}
-
-#endif
-}
-
 static uint64_t reboot_time;
 
 /**
@@ -227,6 +167,45 @@ calculate_fw_crc(void)
 
 	r_page_setup[PX4IO_P_SETUP_CRC]   = sum & 0xFFFF;
 	r_page_setup[PX4IO_P_SETUP_CRC + 1] = sum >> 16;
+}
+
+
+/*
+  control the IMU heater. On the Pixhawk2 this uses the same pin as the blue LED on Pixhawk2
+ */
+static void
+control_IMU_heater(uint16_t duty_cycle)
+{
+	if (duty_cycle == 0) {
+		LED_BLUE(false);
+
+	} else {
+		uint8_t cycle = ((hrt_absolute_time() / 10000UL) % 100U);
+		LED_BLUE(!(cycle >= duty_cycle));
+	}
+}
+
+
+/*
+  blink blue LED at 4Hz in normal operation. When in
+  override blink 4x faster so the user can clearly see
+  that override is happening. This helps when
+  pre-flight testing the override system
+*/
+static void
+control_heartbeat_LED(void)
+{
+	uint32_t heartbeat_period_us = 250 * 1000UL;
+	static uint64_t last_heartbeat_time = 0;
+
+	if (r_status_flags & PX4IO_P_STATUS_FLAGS_OVERRIDE) {
+		heartbeat_period_us /= 4;
+	}
+
+	if ((hrt_absolute_time() - last_heartbeat_time) > heartbeat_period_us) {
+		last_heartbeat_time = hrt_absolute_time();
+		heartbeat_blink();
+	}
 }
 
 int
@@ -346,7 +325,6 @@ user_start(int argc, char *argv[])
 	 */
 
 	uint64_t last_debug_time = 0;
-	uint64_t last_heartbeat_time = 0;
 
 	for (;;) {
 
@@ -371,25 +349,6 @@ user_start(int argc, char *argv[])
 		controls_tick();
 		perf_end(controls_perf);
 
-		/*
-		  blink blue LED at 4Hz in normal operation. When in
-		  override blink 4x faster so the user can clearly see
-		  that override is happening. This helps when
-		  pre-flight testing the override system
-		 */
-		uint32_t heartbeat_period_us = 250 * 1000UL;
-
-		if (r_status_flags & PX4IO_P_STATUS_FLAGS_OVERRIDE) {
-			heartbeat_period_us /= 4;
-		}
-
-		if ((hrt_absolute_time() - last_heartbeat_time) > heartbeat_period_us) {
-			last_heartbeat_time = hrt_absolute_time();
-			heartbeat_blink();
-		}
-
-		ring_blink();
-
 		check_reboot();
 
 		/* check for debug activity (default: none) */
@@ -407,6 +366,13 @@ user_start(int argc, char *argv[])
 				  (unsigned)r_setup_features,
 				  (unsigned)mallinfo().mxordblk);
 			last_debug_time = hrt_absolute_time();
+		}
+
+		if (r_page_setup[PX4IO_P_SETUP_HEATER_DUTY_CYCLE] <= PX4IO_HEATER_MAX) {
+			control_IMU_heater(r_page_setup[PX4IO_P_SETUP_HEATER_DUTY_CYCLE]);
+
+		} else {
+			control_heartbeat_LED();
 		}
 	}
 }

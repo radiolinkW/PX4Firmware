@@ -111,7 +111,7 @@
 #define CCMR_C1_PWMIN_INIT 0 // TBD
 
 //												 				  NotUsed   PWMOut  PWMIn Capture
-io_timer_channel_allocation_t channel_allocations[IOTimerChanModeSize] = { UINT8_MAX,   0  ,  0   ,  0 };
+io_timer_channel_allocation_t channel_allocations[IOTimerChanModeSize] = { UINT16_MAX,   0  ,  0   ,  0 };
 
 typedef uint8_t io_timer_allocation_t; /* big enough to hold MAX_IO_TIMERS */
 
@@ -388,6 +388,12 @@ static int timer_set_rate(unsigned timer, unsigned rate)
 	return 0;
 }
 
+static int timer_set_clock(unsigned timer, unsigned clock_MHz)
+{
+	rPSC(timer) = (io_timers[timer].clock_freq / (clock_MHz*1000000)) - 1;
+	return 0;
+}
+
 
 static int io_timer_init_timer(unsigned timer)
 {
@@ -468,6 +474,20 @@ int io_timer_set_rate(unsigned timer, unsigned rate)
 		/* Change only a timer that is owned by pwm */
 
 		timer_set_rate(timer, rate);
+	}
+
+	return 0;
+}
+
+int io_timer_set_clock(unsigned timer, unsigned clock_MHz)
+{
+	/* Gather the channel bit that belong to the timer */
+	uint32_t channels = get_timer_channels(timer);
+
+	/* Check ownership of PWM out */
+	if ((channels & channel_allocations[IOTimerChanMode_PWMOut]) != 0) {
+		/* Change only a timer that is owned by pwm */
+		timer_set_clock(timer, clock_MHz);
 	}
 
 	return 0;

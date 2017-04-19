@@ -33,7 +33,6 @@
 
 #pragma once
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 /**
@@ -117,6 +116,7 @@
 #define PX4IO_P_STATUS_FLAGS_FMU_INITIALIZED	(1 << 13) /* FMU was initialized and OK once */
 #define PX4IO_P_STATUS_FLAGS_RC_ST24		(1 << 14) /* ST24 input is valid */
 #define PX4IO_P_STATUS_FLAGS_RC_SUMD		(1 << 15) /* SUMD input is valid */
+#define PX4IO_P_STATUS_FLAGS_RC_SRXL		(1 << 15) /* SRXL input is valid - reuses SUMD bit as we're out of bits */
 
 #define PX4IO_P_STATUS_ALARMS			3	 /* alarm flags - alarms latch, write 1 to a bit to clear it */
 #define PX4IO_P_STATUS_ALARMS_VBATT_LOW		(1 << 0) /* [1] VBatt is very close to regulator dropout */
@@ -242,6 +242,12 @@ enum {							/* DSM bind states */
 
 #define PX4IO_P_SETUP_SBUS_RATE			19	/* frame rate of SBUS1 output in Hz */
 #define PX4IO_P_SETUP_IGNORE_SAFETY		20	/* bitmask of surfaces to ignore the safety status */
+
+#define PX4IO_HEATER_DISABLE			65535
+#define PX4IO_HEATER_MIN			0
+#define PX4IO_HEATER_MAX			100
+#define PX4IO_P_SETUP_HEATER_DUTY_CYCLE		21	/**< control the heater pin, setting duty cycle */
+#define PX4IO_P_SETUP_PWM_ALTCLOCK			22  /* alt channel PWM clock in MHz */
 
 /* autopilot control values, -10000..10000 */
 #define PX4IO_PAGE_CONTROLS			51	/**< actuator control groups, one after the other, 8 wide */

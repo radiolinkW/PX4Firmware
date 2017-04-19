@@ -1854,6 +1854,9 @@ PX4IO::io_publish_raw_rc()
 	} else if (_status & PX4IO_P_STATUS_FLAGS_RC_ST24) {
 		rc_val.input_source = input_rc_s::RC_INPUT_SOURCE_PX4IO_ST24;
 
+	} else if (_status & PX4IO_P_STATUS_FLAGS_RC_SRXL) {
+		rc_val.input_source = input_rc_s::RC_INPUT_SOURCE_PX4IO_SRXL;
+
 	} else {
 		rc_val.input_source = input_rc_s::RC_INPUT_SOURCE_UNKNOWN;
 
@@ -2196,6 +2199,7 @@ PX4IO::print_status(bool extended_status)
 	       ((flags & PX4IO_P_STATUS_FLAGS_RC_DSM)   ? " DSM" : ""),
 	       ((flags & PX4IO_P_STATUS_FLAGS_RC_ST24)   ? " ST24" : ""),
 	       ((flags & PX4IO_P_STATUS_FLAGS_RC_SBUS)  ? " SBUS" : ""),
+	       ((flags & PX4IO_P_STATUS_FLAGS_RC_SRXL)  ? " SRXL" : ""),
 	       ((flags & PX4IO_P_STATUS_FLAGS_FMU_OK)   ? " FMU_OK" : " FMU_FAIL"),
 	       ((flags & PX4IO_P_STATUS_FLAGS_RAW_PWM)  ? " RAW_PWM_PASSTHROUGH" : ""),
 	       ((flags & PX4IO_P_STATUS_FLAGS_MIXER_OK) ? " MIXER_OK" : " MIXER_FAIL"),
@@ -2340,11 +2344,12 @@ PX4IO::print_status(bool extended_status)
 	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_RELAYS));
 #endif
 #ifdef CONFIG_ARCH_BOARD_PX4FMU_V2
-	printf("rates 0x%04x default %u alt %u sbus %u\n",
+	printf("rates 0x%04x default %u alt %u sbus %u ignore_safety 0x%04x\n",
 	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_RATES),
 	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_DEFAULTRATE),
 	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_ALTRATE),
-	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_SBUS_RATE));
+	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_SBUS_RATE),
+	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_IGNORE_SAFETY));
 #endif
 	printf("debuglevel %u\n", io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_SET_DEBUG));
 
@@ -2427,6 +2432,11 @@ PX4IO::ioctl(file *filep, int cmd, unsigned long arg)
 		ret = io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_ALTRATE, arg);
 		break;
 
+	case PWM_SERVO_SET_UPDATE_CLOCK:
+		/* set the requested alternate clock */
+		ret = io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_ALTCLOCK, arg);
+		break;
+        
 	case PWM_SERVO_GET_UPDATE_RATE:
 		/* get the alternative update rate */
 		*(unsigned *)arg = io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_ALTRATE);
@@ -2783,6 +2793,11 @@ PX4IO::ioctl(file *filep, int cmd, unsigned long arg)
 #endif
 		break;
 
+	case GPIO_SET_HEATER_DUTY_CYCLE:
+		/* set heater duty cycle as a percentage */
+		ret = io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_HEATER_DUTY_CYCLE, arg);
+		break;
+
 	case MIXERIOCGETOUTPUTCOUNT:
 		*(unsigned *)arg = _max_actuators;
 		break;
@@ -2826,6 +2841,9 @@ PX4IO::ioctl(file *filep, int cmd, unsigned long arg)
 			} else if (status & PX4IO_P_STATUS_FLAGS_RC_ST24) {
 				rc_val->input_source = input_rc_s::RC_INPUT_SOURCE_PX4IO_ST24;
 
+			} else if (status & PX4IO_P_STATUS_FLAGS_RC_SRXL) {
+				rc_val->input_source = input_rc_s::RC_INPUT_SOURCE_PX4IO_SRXL;
+
 			} else {
 				rc_val->input_source = input_rc_s::RC_INPUT_SOURCE_UNKNOWN;
 			}
@@ -2848,6 +2866,11 @@ PX4IO::ioctl(file *filep, int cmd, unsigned long arg)
 		/* reboot into bootloader - arg must be PX4IO_REBOOT_BL_MAGIC */
 		io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_REBOOT_BL, arg);
 		// we don't expect a reply from this operation
+		ret = OK;
+		break;
+
+	case PWM_IO_GET_STATUS:
+		*(unsigned *)arg = system_status();
 		ret = OK;
 		break;
 

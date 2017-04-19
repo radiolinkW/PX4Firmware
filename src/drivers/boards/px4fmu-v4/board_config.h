@@ -120,7 +120,11 @@ __BEGIN_DECLS
 
 #define PX4_SPI_BUS_SENSORS	1
 #define PX4_SPI_BUS_RAMTRON	2
+#ifdef PIXRACER_BETA_BOARD
+#define PX4_SPI_BUS_BARO	PX4_SPI_BUS_SENSORS
+#else
 #define PX4_SPI_BUS_BARO	PX4_SPI_BUS_RAMTRON
+#endif
 
 /* Use these in place of the spi_dev_e enumeration to select a specific SPI device on SPI1 */
 #define PX4_SPIDEV_GYRO			1
@@ -134,9 +138,6 @@ __BEGIN_DECLS
  * use 3 for the barometer to differentiate
  */
 #define PX4_SPIDEV_BARO			3
-#if (PX4_SPIDEV_BARO == SPIDEV_FLASH)
-#error PX4_SPIDEV_BARO must not be equal to SPIDEV_FLASH as they share the same bus
-#endif
 
 /* I2C busses */
 #define PX4_I2C_BUS_EXPANSION	1
@@ -262,10 +263,10 @@ __BEGIN_DECLS
 
 #define POWER_SPEKTRUM(_s)			stm32_gpiowrite(GPIO_SPEKTRUM_PWR_EN, (1-_s))
 //#define GPIO_USART1_RX_SPEKTRUM		(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTC|GPIO_PIN7)
-#define SPEKTRUM_RX_AS_UART()		stm32_configgpio(GPIO_USART1_RX)
+#define SPEKTRUM_RX_AS_UART()		stm32_configgpio(GPIO_USART6_RX)
 
 // FMUv4 has a separate GPIO for serial RC output
-#define GPIO_RC_OUT			(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTC|GPIO_PIN6)
+#define GPIO_RC_OUT			(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN0)
 #define SPEKTRUM_RX_AS_GPIO()		stm32_configgpio(GPIO_RC_OUT)
 #define SPEKTRUM_RX_HIGH(_s)		stm32_gpiowrite(GPIO_RC_OUT, (_s))
 

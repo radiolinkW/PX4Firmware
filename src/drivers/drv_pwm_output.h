@@ -248,7 +248,6 @@ struct pwm_output_rc_config {
 #define PWM_SERVO_IGNORE_SAFETY			_PX4_IOC(_PWM_SERVO_BASE, 32)
 
 /** set auxillary output mode. These correspond to enum Mode in px4fmu/fmu.cpp */
-/** set auxillary output mode. These correspond to enum Mode in px4fmu/fmu.cpp */
 #define PWM_SERVO_MODE_NONE			0
 #define PWM_SERVO_MODE_2PWM			1
 #define PWM_SERVO_MODE_2PWM2CAP			2
@@ -260,10 +259,18 @@ struct pwm_output_rc_config {
 #define PWM_SERVO_MODE_4CAP			8
 #define PWM_SERVO_MODE_5CAP			9
 #define PWM_SERVO_MODE_6CAP		       10
-#define PWM_SERVO_SET_MODE			_PX4_IOC(_PWM_SERVO_BASE, 32)
+#define PWM_SERVO_MODE_10PWM		11
+#define PWM_SERVO_MODE_12PWM		12
+#define PWM_SERVO_SET_MODE			_PX4_IOC(_PWM_SERVO_BASE, 33)
 
 /** enable/disable oneshot mode */
-#define PWM_SERVO_SET_ONESHOT			_PX4_IOC(_PWM_SERVO_BASE, 33)
+#define PWM_SERVO_SET_ONESHOT			_PX4_IOC(_PWM_SERVO_BASE, 34)
+
+/** fetch PX4IO status */
+#define PWM_IO_GET_STATUS			_PX4_IOC(_PWM_SERVO_BASE, 35)
+
+/** set alternate servo update clock */
+#define PWM_SERVO_SET_UPDATE_CLOCK _PX4_IOC(_PWM_SERVO_BASE, 36)
 
 /*
  *
@@ -344,6 +351,15 @@ __EXPORT extern uint32_t up_pwm_servo_get_rate_group(unsigned group);
  * @return		OK if the group was adjusted, -ERANGE if an unsupported update rate is set.
  */
 __EXPORT extern int	up_pwm_servo_set_rate_group_update(unsigned group, unsigned rate);
+
+/**
+ * Set the update clock for a given rate group.
+ *
+ * @param group		The rate group whose update rate will be changed.
+ * @param clock_MHz	the clock in MHz
+ * @return		OK if the group was adjusted, -ERANGE if an unsupported update clock is set.
+ */
+__EXPORT extern int	up_pwm_servo_set_rate_group_clock(unsigned group, unsigned clock_MHz);
 
 /**
  * Set the current output value for a channel.

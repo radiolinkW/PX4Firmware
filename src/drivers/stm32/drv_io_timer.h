@@ -46,7 +46,11 @@
 __BEGIN_DECLS
 /* configuration limits */
 #define MAX_IO_TIMERS			4
+#if defined(CONFIG_ARCH_BOARD_VRBRAIN_V51) || defined(CONFIG_ARCH_BOARD_VRBRAIN_V52) || defined(CONFIG_ARCH_BOARD_VRBRAIN_V54) || defined(CONFIG_ARCH_BOARD_VRCORE_V10) || defined(CONFIG_ARCH_BOARD_VRUBRAIN_V51) || defined(CONFIG_ARCH_BOARD_VRUBRAIN_V52)
+#define MAX_TIMER_IO_CHANNELS	12
+#else
 #define MAX_TIMER_IO_CHANNELS	8
+#endif
 #define IO_TIMER_ALL_MODES_CHANNELS 0
 
 typedef enum io_timer_channel_mode_t {
@@ -57,7 +61,7 @@ typedef enum io_timer_channel_mode_t {
 	IOTimerChanModeSize
 } io_timer_channel_mode_t;
 
-typedef uint8_t io_timer_channel_allocation_t; /* big enough to hold MAX_TIMER_IO_CHANNELS */
+typedef uint16_t io_timer_channel_allocation_t; /* big enough to hold MAX_TIMER_IO_CHANNELS */
 
 /* array of timers dedicated to PWM in and out and capture use */
 typedef struct io_timers_t {
@@ -102,6 +106,7 @@ __EXPORT int io_timer_set_rate(unsigned timer, unsigned rate);
 __EXPORT int io_timer_set_enable(bool state, io_timer_channel_mode_t mode,
 				 io_timer_channel_allocation_t masks);
 __EXPORT int io_timer_set_rate(unsigned timer, unsigned rate);
+__EXPORT int io_timer_set_clock(unsigned timer, unsigned clock_MHz);
 __EXPORT uint16_t io_channel_get_ccr(unsigned channel);
 __EXPORT int io_timer_set_ccr(unsigned channel, uint16_t value);
 __EXPORT uint32_t io_timer_get_group(unsigned timer);
