@@ -221,14 +221,14 @@ __EXPORT int nsh_archinitialize(void)
 	stm32_configgpio(GPIO_ADC1_IN11);	/* RSSI analog in */
 
 	/* configure power supply control/sense pins */
-	stm32_configgpio(GPIO_PERIPH_3V3_EN);
+//	stm32_configgpio(GPIO_PERIPH_3V3_EN);
 	stm32_configgpio(GPIO_VDD_BRICK_VALID);
 
 	stm32_configgpio(GPIO_SBUS_INV);
-	stm32_configgpio(GPIO_8266_GPIO0);
-	stm32_configgpio(GPIO_SPEKTRUM_PWR_EN);
-	stm32_configgpio(GPIO_8266_PD);
-	stm32_configgpio(GPIO_8266_RST);
+//	stm32_configgpio(GPIO_8266_GPIO0);
+//	stm32_configgpio(GPIO_SPEKTRUM_PWR_EN);
+//	stm32_configgpio(GPIO_8266_PD);
+//	stm32_configgpio(GPIO_8266_RST);
 	stm32_configgpio(GPIO_BTN_SAFETY);
 
 #ifdef GPIO_RC_OUT
@@ -241,8 +241,8 @@ __EXPORT int nsh_archinitialize(void)
 	stm32_configgpio(GPIO_GPIO1_OUTPUT);
 	stm32_configgpio(GPIO_GPIO2_OUTPUT);
 	stm32_configgpio(GPIO_GPIO3_OUTPUT);
-	stm32_configgpio(GPIO_GPIO4_OUTPUT);
-	stm32_configgpio(GPIO_GPIO5_OUTPUT);
+//	stm32_configgpio(GPIO_GPIO4_OUTPUT);
+//	stm32_configgpio(GPIO_GPIO5_OUTPUT);
 
 	/* configure the high-resolution time/callout interface */
 	hrt_init();
