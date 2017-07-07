@@ -241,8 +241,8 @@ __EXPORT int nsh_archinitialize(void)
 	stm32_configgpio(GPIO_GPIO1_OUTPUT);
 	stm32_configgpio(GPIO_GPIO2_OUTPUT);
 	stm32_configgpio(GPIO_GPIO3_OUTPUT);
-//	stm32_configgpio(GPIO_GPIO4_OUTPUT);
-//	stm32_configgpio(GPIO_GPIO5_OUTPUT);
+	stm32_configgpio(GPIO_GPIO4_OUTPUT);
+	stm32_configgpio(GPIO_GPIO5_OUTPUT);
 
 	/* configure the high-resolution time/callout interface */
 	hrt_init();
