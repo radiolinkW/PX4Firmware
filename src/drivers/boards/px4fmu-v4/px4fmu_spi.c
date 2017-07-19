@@ -71,7 +71,7 @@ __EXPORT void stm32_spiinitialize(void)
 {
 #ifdef CONFIG_STM32_SPI1
 	stm32_configgpio(GPIO_SPI_CS_MPU6500);
-	stm32_configgpio(GPIO_SPI_CS_LIS3MDL);
+//	stm32_configgpio(GPIO_SPI_CS_LIS3MDL);
 	stm32_configgpio(GPIO_SPI_CS_LPS22HB);
 
 	/* De-activate all peripherals,
@@ -79,11 +79,11 @@ __EXPORT void stm32_spiinitialize(void)
 	 * state machines
 	 */
 	stm32_gpiowrite(GPIO_SPI_CS_MPU6500, 1);
-	stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
+//	stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
 	stm32_gpiowrite(GPIO_SPI_CS_LPS22HB, 1);
 
 	stm32_configgpio(GPIO_DRDY_MPU6500);
-	stm32_configgpio(GPIO_DRDY_LIS3MDL);
+//	stm32_configgpio(GPIO_DRDY_LIS3MDL);
 	stm32_configgpio(GPIO_DRDY_LPS22HB);
 #endif
 
@@ -105,7 +105,7 @@ __EXPORT void stm32_spi1select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, 
 
 	case PX4_SPIDEV_BARO:
 
-		stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
+//		stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
 		stm32_gpiowrite(GPIO_SPI_CS_MPU6500, 1);
 		stm32_gpiowrite(GPIO_SPI_CS_LPS22HB, !selected);
 		break;
@@ -113,14 +113,14 @@ __EXPORT void stm32_spi1select(FAR struct spi_dev_s *dev, enum spi_dev_e devid, 
 	case PX4_SPIDEV_HMC:
 		/* Making sure the other peripherals are not selected */
 		stm32_gpiowrite(GPIO_SPI_CS_MPU6500, 1);
-		stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, !selected);
+//		stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, !selected);
 		stm32_gpiowrite(GPIO_SPI_CS_LPS22HB, 1);
 		break;
 
 	case PX4_SPIDEV_MPU:
 		/* Making sure the other peripherals are not selected */
 		stm32_gpiowrite(GPIO_SPI_CS_MPU6500, !selected);
-		stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
+//		stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
 		stm32_gpiowrite(GPIO_SPI_CS_LPS22HB, 1);
 		break;
 

@@ -2474,11 +2474,11 @@ PX4FMU::sensor_reset(int ms)
 	}
 
 	stm32_configgpio(GPIO_SPI_CS_OFF_LPS22HB);
-	stm32_configgpio(GPIO_SPI_CS_OFF_LIS3MDL);
+//	stm32_configgpio(GPIO_SPI_CS_OFF_LIS3MDL);
 	stm32_configgpio(GPIO_SPI_CS_OFF_MPU6500);
 
 	stm32_gpiowrite(GPIO_SPI_CS_OFF_LPS22HB, 0);
-	stm32_gpiowrite(GPIO_SPI_CS_OFF_LIS3MDL, 0);
+//	stm32_gpiowrite(GPIO_SPI_CS_OFF_LIS3MDL, 0);
 	stm32_gpiowrite(GPIO_SPI_CS_OFF_MPU6500, 0);
 
 	stm32_configgpio(GPIO_SPI1_SCK_OFF);
@@ -2490,11 +2490,11 @@ PX4FMU::sensor_reset(int ms)
 	stm32_gpiowrite(GPIO_SPI1_MOSI_OFF, 0);
 
 		stm32_configgpio(GPIO_DRDY_OFF_LPS22HB);
-		stm32_configgpio(GPIO_DRDY_OFF_LIS3MDL);
+//		stm32_configgpio(GPIO_DRDY_OFF_LIS3MDL);
 		stm32_configgpio(GPIO_DRDY_OFF_MPU6500);
 
 		stm32_gpiowrite(GPIO_DRDY_OFF_LPS22HB, 0);
-		stm32_gpiowrite(GPIO_DRDY_OFF_LIS3MDL, 0);
+//		stm32_gpiowrite(GPIO_DRDY_OFF_LIS3MDL, 0);
 		stm32_gpiowrite(GPIO_DRDY_OFF_MPU6500, 0);
 
 
@@ -2517,7 +2517,7 @@ PX4FMU::sensor_reset(int ms)
 	/* reconfigure the SPI pins */
 #ifdef CONFIG_STM32_SPI1
 		stm32_configgpio(GPIO_SPI_CS_LPS22HB);
-		stm32_configgpio(GPIO_SPI_CS_LIS3MDL);
+//		stm32_configgpio(GPIO_SPI_CS_LIS3MDL);
 		stm32_configgpio(GPIO_SPI_CS_MPU6500);
 
 	/* De-activate all peripherals,
@@ -2525,7 +2525,7 @@ PX4FMU::sensor_reset(int ms)
 	 * state machines
 	 */
 	stm32_gpiowrite(GPIO_SPI_CS_LPS22HB, 1);
-	stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
+//	stm32_gpiowrite(GPIO_SPI_CS_LIS3MDL, 1);
 	stm32_gpiowrite(GPIO_SPI_CS_MPU6500, 1);
 
 	stm32_configgpio(GPIO_SPI1_SCK);
