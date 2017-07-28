@@ -1,7 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
- *         Author: David Sidrane <david_s5@nscdg.com>
+ *   Copyright (C) 2012 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,9 +32,9 @@
  ****************************************************************************/
 
 /**
- * @file aerofc-v1_init.c
+ * @file px4fmu_init.c
  *
- * aerofc-v1-specific early startup code.  This file implements the
+ * PX4FMU-specific early startup code.  This file implements the
  * nsh_archinitialize() function that is called early by nsh during startup.
  *
  * Code here is run before the rcS script is invoked; it should start required
@@ -54,13 +53,16 @@
 #include <errno.h>
 
 #include <nuttx/arch.h>
+#include <nuttx/spi.h>
 #include <nuttx/i2c.h>
+#include <nuttx/sdio.h>
+#include <nuttx/mmcsd.h>
 #include <nuttx/analog/adc.h>
 #include <nuttx/gran.h>
 
-#include "stm32.h"
+#include <stm32.h>
 #include "board_config.h"
-#include "stm32_uart.h"
+#include <stm32_uart.h>
 
 #include <arch/board/board.h>
 
@@ -104,19 +106,6 @@ extern void led_init(void);
 extern void led_on(int led);
 extern void led_off(int led);
 __END_DECLS
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-static int _bootloader_force_pin_callback(int irq, void *context)
-{
-	if (stm32_gpioread(GPIO_FORCE_BOOTLOADER)) {
-		up_systemreset();
-	}
-
-	return 0;
-}
 
 /****************************************************************************
  * Protected Functions
@@ -201,9 +190,6 @@ fat_dma_free(FAR void *memory, size_t size)
 __EXPORT void
 stm32_boardinitialize(void)
 {
-	stm32_configgpio(GPIO_FORCE_BOOTLOADER);
-	_bootloader_force_pin_callback(0, NULL);
-
 	/* configure SPI interfaces */
 	stm32_spiinitialize();
 
@@ -220,16 +206,50 @@ stm32_boardinitialize(void)
  ****************************************************************************/
 
 static struct spi_dev_s *spi1;
+static struct spi_dev_s *spi2;
+static struct spi_dev_s *spi5;
+static struct spi_dev_s *spi6;
+static struct sdio_dev_s *sdio;
 
 #include <math.h>
 
 __EXPORT int nsh_archinitialize(void)
 {
-	/* the interruption subsystem is not initialized when stm32_boardinitialize() is called */
-	stm32_gpiosetevent(GPIO_FORCE_BOOTLOADER, true, false, false, _bootloader_force_pin_callback);
+
+	/* configure ADC pins */
+	stm32_configgpio(GPIO_ADC1_IN2);	/* BATT_VOLTAGE_SENS */
+	stm32_configgpio(GPIO_ADC1_IN3);	/* BATT_CURRENT_SENS */
+	stm32_configgpio(GPIO_ADC1_IN4);	/* VDD_5V_SENS */
+	stm32_configgpio(GPIO_ADC1_IN11);	/* BATT2_VOLTAGE_SENS */
+	stm32_configgpio(GPIO_ADC1_IN13);	/* BATT2_CURRENT_SENS */
 
 	/* configure power supply control/sense pins */
-	stm32_configgpio(GPIO_VDD_5V_SENSORS_EN);
+	stm32_configgpio(GPIO_VDD_3V3_PERIPH_EN);
+	stm32_configgpio(GPIO_VDD_3V3_SENSORS_EN);
+	stm32_configgpio(GPIO_VDD_5V_PERIPH_EN);
+	stm32_configgpio(GPIO_VDD_5V_HIPOWER_EN);
+
+	stm32_configgpio(GPIO_VDD_BRICK_VALID);
+	stm32_configgpio(GPIO_VDD_BRICK2_VALID);
+
+	stm32_configgpio(GPIO_VDD_5V_PERIPH_OC);
+	stm32_configgpio(GPIO_VDD_5V_HIPOWER_OC);
+	stm32_configgpio(GPIO_VBUS_VALID);
+
+//	stm32_configgpio(GPIO_SBUS_INV);
+//	stm32_configgpio(GPIO_8266_GPIO0);
+//	stm32_configgpio(GPIO_SPEKTRUM_PWR_EN);
+//	stm32_configgpio(GPIO_8266_PD);
+//	stm32_configgpio(GPIO_8266_RST);
+//	stm32_configgpio(GPIO_BTN_SAFETY_FMU);
+
+	/* configure the GPIO pins to outputs and keep them low */
+	stm32_configgpio(GPIO_GPIO0_OUTPUT);
+	stm32_configgpio(GPIO_GPIO1_OUTPUT);
+	stm32_configgpio(GPIO_GPIO2_OUTPUT);
+	stm32_configgpio(GPIO_GPIO3_OUTPUT);
+	stm32_configgpio(GPIO_GPIO4_OUTPUT);
+	stm32_configgpio(GPIO_GPIO5_OUTPUT);
 
 	/* configure the high-resolution time/callout interface */
 	hrt_init();
@@ -262,7 +282,6 @@ __EXPORT int nsh_archinitialize(void)
 	/* initial LED state */
 	drv_led_start();
 	led_off(LED_AMBER);
-	led_off(LED_BLUE);
 
 	/* Configure SPI-based devices */
 
@@ -278,8 +297,88 @@ __EXPORT int nsh_archinitialize(void)
 	SPI_SETFREQUENCY(spi1, 10000000);
 	SPI_SETBITS(spi1, 8);
 	SPI_SETMODE(spi1, SPIDEV_MODE3);
+	SPI_SELECT(spi1, PX4_SPIDEV_ICM, false);
+	SPI_SELECT(spi1, PX4_SPIDEV_BARO, false);
+	SPI_SELECT(spi1, PX4_SPIDEV_LIS, false);
 	SPI_SELECT(spi1, PX4_SPIDEV_MPU, false);
+	SPI_SELECT(spi1, PX4_SPIDEV_EEPROM, false);
 	up_udelay(20);
+
+	/* Get the SPI port for the FRAM */
+
+	spi2 = up_spiinitialize(2);
+
+	if (!spi2) {
+		message("[boot] FAILED to initialize SPI port 2\n");
+		up_ledon(LED_AMBER);
+		return -ENODEV;
+	}
+
+	/* Default SPI2 to 37.5 MHz (40 MHz rounded to nearest valid divider, F4 max)
+	 * and de-assert the known chip selects. */
+
+	// XXX start with 10.4 MHz in FRAM usage and go up to 37.5 once validated
+	SPI_SETFREQUENCY(spi2, 12 * 1000 * 1000);
+	SPI_SETBITS(spi2, 8);
+	SPI_SETMODE(spi2, SPIDEV_MODE3);
+	SPI_SELECT(spi2, SPIDEV_FLASH, false);
+
+	
+	/* Configure SPI 5-based devices */
+
+	spi5 = up_spiinitialize(PX4_SPI_EXT0);
+
+	if (!spi5) {
+		message("[boot] FAILED to initialize SPI port %d\n", PX4_SPI_EXT0);
+		up_ledon(LED_RED);
+		return -ENODEV;
+	}
+
+	/* Default SPI5 to 1MHz and de-assert the known chip selects. */
+	SPI_SETFREQUENCY(spi5, 10000000);
+	SPI_SETBITS(spi5, 8);
+	SPI_SETMODE(spi5, SPIDEV_MODE3);
+	SPI_SELECT(spi5, PX4_SPIDEV_EXT0, false);
+
+	/* Configure SPI 6-based devices */
+
+	spi6 = up_spiinitialize(PX4_SPI_EXT1);
+
+	if (!spi6) {
+		message("[boot] FAILED to initialize SPI port %d\n", PX4_SPI_EXT1);
+		up_ledon(LED_RED);
+		return -ENODEV;
+	}
+
+	/* Default SPI6 to 1MHz and de-assert the known chip selects. */
+	SPI_SETFREQUENCY(spi6, 10000000);
+	SPI_SETBITS(spi6, 8);
+	SPI_SETMODE(spi6, SPIDEV_MODE3);
+	SPI_SELECT(spi6, PX4_SPIDEV_EXT1, false);
+
+#ifdef CONFIG_MMCSD
+	/* First, get an instance of the SDIO interface */
+
+	sdio = sdio_initialize(CONFIG_NSH_MMCSDSLOTNO);
+
+	if (!sdio) {
+		message("[boot] Failed to initialize SDIO slot %d\n",
+			CONFIG_NSH_MMCSDSLOTNO);
+		return -ENODEV;
+	}
+
+	/* Now bind the SDIO interface to the MMC/SD driver */
+	int ret = mmcsd_slotinitialize(CONFIG_NSH_MMCSDMINOR, sdio);
+
+	if (ret != OK) {
+		message("[boot] Failed to bind SDIO to the MMC/SD driver: %d\n", ret);
+		return ret;
+	}
+
+	/* Then let's guess and say that there is a card in the slot. There is no card detect GPIO. */
+	sdio_mediachange(sdio, true);
+
+#endif
 
 	return OK;
 }
