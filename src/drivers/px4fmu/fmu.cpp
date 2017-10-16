@@ -943,6 +943,7 @@ void PX4FMU::set_rc_scan_state(RC_SCAN newState)
 void PX4FMU::rc_io_invert(bool invert)
 {
 	INVERT_RC_INPUT(invert);
+	INVERT_RC_OUT(invert);
 
 	if (!invert) {
 		// set FMU_RC_OUTPUT high to pull RC_INPUT up

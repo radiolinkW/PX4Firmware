@@ -225,10 +225,7 @@ __EXPORT int nsh_archinitialize(void)
 	stm32_configgpio(GPIO_VDD_BRICK_VALID);
 
 	stm32_configgpio(GPIO_SBUS_INV);
-//	stm32_configgpio(GPIO_8266_GPIO0);
-//	stm32_configgpio(GPIO_SPEKTRUM_PWR_EN);
-//	stm32_configgpio(GPIO_8266_PD);
-//	stm32_configgpio(GPIO_8266_RST);
+	stm32_configgpio(GPIO_SBUS_OUT);
 	stm32_configgpio(GPIO_BTN_SAFETY);
 
 #ifdef GPIO_RC_OUT
