@@ -227,6 +227,7 @@ private:
 	unsigned	_num_failsafe_set;
 	unsigned	_num_disarmed_set;
 	bool		_safety_off;
+	uint8_t		_safety_options;
 	bool		_safety_disabled;
 	orb_advert_t	_to_safety;
 	bool		_oneshot_mode;
@@ -437,6 +438,7 @@ PX4FMU::PX4FMU() :
 	_num_failsafe_set(0),
 	_num_disarmed_set(0),
 	_safety_off(false),
+	_safety_options(0),
 	_safety_disabled(false),
 	_to_safety(nullptr),
 	_oneshot_mode(false),
@@ -547,7 +549,9 @@ PX4FMU:: safety_check_button(void)
 	 */
 	if (safety_button_pressed && !_safety_off) {
 
-		if (counter < CYCLE_COUNT) {
+		if ((_safety_options & PWM_SERVO_SET_SAFETY_OPTION_DISABLE_BUTTON_OFF)) {
+					// do nothing
+		} else if (counter < CYCLE_COUNT) {
 			counter++;
 
 		} else if (counter == CYCLE_COUNT) {
@@ -558,7 +562,9 @@ PX4FMU:: safety_check_button(void)
 
 	} else if (safety_button_pressed && _safety_off) {
 
-		if (counter < CYCLE_COUNT) {
+		if ((_safety_options & PWM_SERVO_SET_SAFETY_OPTION_DISABLE_BUTTON_ON)) {
+					// do nothing
+		}else if (counter < CYCLE_COUNT) {
 			counter++;
 
 		} else if (counter == CYCLE_COUNT) {
@@ -1694,6 +1700,12 @@ PX4FMU::pwm_ioctl(file *filp, int cmd, unsigned long arg)
 		_safety_off = false;
 		update_pwm_out_state();
 		break;
+
+	case PWM_SERVO_SET_SAFETY_OPTIONS: {
+			// control safety switch options
+			_safety_options = (arg & (PWM_SERVO_SET_SAFETY_OPTION_DISABLE_BUTTON_ON|PWM_SERVO_SET_SAFETY_OPTION_DISABLE_BUTTON_OFF));
+			break;
+		}
 
 	case PWM_SERVO_DISARM:
 		_servos_armed = false;
