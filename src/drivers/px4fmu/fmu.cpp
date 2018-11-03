@@ -2353,7 +2353,7 @@ PX4FMU::write(file *filp, const char *buffer, size_t len)
 		count = 12;
 	}
 
-#elif defined(CONFIG_ARCH_BOARD_AEROCORE)
+#elif defined(CONFIG_ARCH_BOARD_AEROCORE) || defined(CONFIG_ARCH_BOARD_PX4FMU_V4)
 
 	if (count > 8) {
 		// we have at most 8 outputs

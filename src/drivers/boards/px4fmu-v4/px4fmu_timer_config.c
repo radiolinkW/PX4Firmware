@@ -135,6 +135,7 @@ __EXPORT const timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
 			},
 			{
 				.gpio_out = GPIO_TIM4_CH1OUT,
+				.gpio_in = GPIO_TIM4_CH1IN,
 				.timer_index = 1,
 				.timer_channel = 1,
 				.ccr_offset = STM32_GTIM_CCR1_OFFSET,
@@ -142,6 +143,7 @@ __EXPORT const timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
 			},
 			{
 				.gpio_out = GPIO_TIM9_CH1OUT,
+				.gpio_in  = GPIO_TIM9_CH1IN,
 				.timer_index = 2,
 				.timer_channel = 1,
 				.ccr_offset = STM32_GTIM_CCR1_OFFSET,
